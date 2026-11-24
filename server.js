@@ -4,7 +4,6 @@ import path3 from "node:path";
 import express from "express";
 import cookieParser from "cookie-parser";
 import helmet from "helmet";
-import { createServer as createViteServer } from "vite";
 
 // server/config.ts
 import dotenv from "dotenv";
@@ -3961,16 +3960,19 @@ async function startServer() {
     res.status(404).json({ error: "API endpoint not found." });
   });
   const distDir = path3.resolve(process.cwd(), "dist");
-  if (!config.isProd) {
-    const vite = await createViteServer({
-      server: { middlewareMode: true },
-      appType: "spa"
-    });
-    app.use(vite.middlewares);
-  } else {
+  const indexHtmlPath = path3.join(distDir, "index.html");
+  if (fs3.existsSync(indexHtmlPath)) {
     app.use(express.static(distDir));
     app.get("*", (_req, res) => {
-      res.sendFile(path3.join(distDir, "index.html"));
+      res.sendFile(indexHtmlPath);
+    });
+  } else {
+    app.get("/", (_req, res) => {
+      res.json({
+        ok: true,
+        message: "Credit Cash API Server is online",
+        dbDriver: db.driver
+      });
     });
   }
   app.listen(config.port, "0.0.0.0", () => {
