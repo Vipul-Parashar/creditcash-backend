@@ -681,8 +681,8 @@ async function createSession(userId, ipAddress, userAgent) {
 function setSessionCookie(res, rawToken, expiresAt) {
   res.cookie(SESSION_COOKIE_NAME, rawToken, {
     httpOnly: true,
-    sameSite: "lax",
-    secure: config.cookieSecure,
+    sameSite: "none",
+    secure: true,
     expires: expiresAt,
     path: "/"
   });
@@ -690,8 +690,8 @@ function setSessionCookie(res, rawToken, expiresAt) {
 function clearSessionCookie(res) {
   res.clearCookie(SESSION_COOKIE_NAME, {
     httpOnly: true,
-    sameSite: "lax",
-    secure: config.cookieSecure,
+    sameSite: "none",
+    secure: true,
     path: "/"
   });
 }
@@ -3911,6 +3911,25 @@ async function startServer() {
       // Allows preview inside AI Studio / Replit iframe
     })
   );
+  app.use((req, res, next) => {
+    const origin = req.headers.origin;
+    if (origin) {
+      res.setHeader("Access-Control-Allow-Origin", origin);
+      res.setHeader("Access-Control-Allow-Credentials", "true");
+      res.setHeader(
+        "Access-Control-Allow-Headers",
+        "Origin, X-Requested-With, Content-Type, Accept, X-CSRF-Token, Authorization"
+      );
+      res.setHeader(
+        "Access-Control-Allow-Methods",
+        "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+      );
+    }
+    if (req.method === "OPTIONS") {
+      return res.sendStatus(204);
+    }
+    next();
+  });
   app.use(cookieParser());
   app.use(
     express.json({
